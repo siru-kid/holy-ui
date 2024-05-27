@@ -13,8 +13,11 @@ import Tab from "~/components/tabs/Tab";
 import Tabs from "~/components/tabs/Tabs";
 import { useGlobalSetting } from "~/contexts/GlobalSettingProvider";
 import Language from "./Language";
-import useLanguage from "~/hooks/useLangauge";
+import useLanguage from "~/hooks/useLanguage";
 import LanguageForm from "./LanguageForm";
+import DictionaryForm from "./DictionaryForm";
+import Dictionary from "./Dictionary";
+import useDictionary from "~/hooks/useDictionary";
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -32,20 +35,31 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 function AdminSettings() {
-  const [activeTab, setActiveTab] = React.useState(1);
+  const [activeTab, setActiveTab] = useState(0);
   const { setting } = useGlobalSetting();
   const { labels } = setting;
+
   const [modelOpen, setModelOpen] = useState(false);
   const classes = useStyles();
-  const [anchorEl, setAnchorEl] = React.useState(null);
+  const [anchorEl, setAnchorEl] = useState(null);
+
   const {
     populateLanguageForm,
     deleteLangConfig,
-    dialogFormProps,
-    handleAddModalClose,
-    handleAddModalOpen,
-    modalOpenAdd
+    dialogFormProps: langDialogFormProps,
+    handleAddModalClose: handleLangAddModalClose,
+    handleAddModalOpen: handleLangAddModalOpen,
+    modalOpenAdd: langModalOpenAdd
   } = useLanguage();
+
+  const {
+    dialogFormProps: dictionaryDialogFormProps,
+    modalOpenAdd: dictionaryModalOpenAdd,
+    handleAddModalClose: handleDictionaryAddModalClose,
+    handleAddModalOpen: handleDictionaryAddModalOpen,
+    populateDictionaryForm,
+    deleteDictionary
+  } = useDictionary();
 
   const handleTabChange = useCallback(
     (event, newValue) => {
@@ -57,20 +71,22 @@ function AdminSettings() {
   const MAPPING = {
     0: <Language populateLanguageForm={populateLanguageForm} deleteLanguage={deleteLangConfig} />,
     1: "admin_settings",
-    2: "translations",
+    2: <Dictionary populateDictionaryForm={populateDictionaryForm} deleteDictionary={deleteDictionary} />,
     3: "other_settings"
   };
 
   const renderTabContent = useMemo(() => {
     return MAPPING[activeTab];
-  }, [activeTab, labels]);
+  }, [activeTab]);
 
   const handleSearchIcon = useCallback(() => {
     setModelOpen(true);
   }, [setModelOpen]);
+
   const handleModelClose = useCallback(() => {
     setModelOpen(false);
   }, [setModelOpen]);
+
   const handleClick = useCallback(
     (event) => {
       setAnchorEl(event.currentTarget);
@@ -102,7 +118,7 @@ function AdminSettings() {
     () => [
       {
         label: "Add New",
-        actionHandler: handleAddModalOpen,
+        actionHandler: activeTab === 0 ? handleLangAddModalOpen : handleDictionaryAddModalOpen,
         icon: <AddIcon />
       },
       {
@@ -111,34 +127,41 @@ function AdminSettings() {
         icon: <SaveIcon />
       }
     ],
-    [handleAddModalOpen, labels.action_menu_save]
+    [handleLangAddModalOpen, handleDictionaryAddModalOpen, activeTab, labels.action_menu_save]
   );
+
   const renderActionMenu = useMemo(
     () =>
       actionMenuItems &&
-      actionMenuItems.map((actionMenu, index) => {
-        return (
-          <MenuItem key={index} onClick={() => handleMenuItemClick(actionMenu.actionHandler)}>
-            <ListItemIcon>{actionMenu.icon}</ListItemIcon>
-            {actionMenu.label}
-          </MenuItem>
-        );
-      }),
+      actionMenuItems.map((actionMenu, index) => (
+        <MenuItem key={index} onClick={() => handleMenuItemClick(actionMenu.actionHandler)}>
+          <ListItemIcon>{actionMenu.icon}</ListItemIcon>
+          {actionMenu.label}
+        </MenuItem>
+      )),
     [actionMenuItems, handleMenuItemClick]
   );
 
   const dialogForms = useCallback(() => {
-    const { langConfig, handleChange, errors } = dialogFormProps.dialogProps;
+    const langDialogProps = langDialogFormProps.dialogProps || {};
+    const dictionaryDialogProps = dictionaryDialogFormProps.dialogProps || {};
+    const { langConfig, handleChange: handleLangChange, errors: langErrors } = langDialogProps;
+    const { dictConfig, handleChange: handleDictChange, errors: dictErrors } = dictionaryDialogProps;
+
     switch (activeTab) {
       case 0:
-        return <LanguageForm languageConfig={{ ...langConfig }} handleChange={handleChange} errors={errors} />;
-      case 1:
-        return null;
+        return <LanguageForm languageConfig={{ ...langConfig }} handleChange={handleLangChange} errors={langErrors} />;
+      case 2:
+        return (
+          <DictionaryForm dictionaryConfig={{ ...dictConfig }} handleChange={handleDictChange} errors={dictErrors} />
+        );
       default:
         return null;
     }
-  }, [activeTab, dialogFormProps.dialogProps]);
+  }, [activeTab, dictionaryDialogFormProps, langDialogFormProps]);
+
   const currentForm = useMemo(() => dialogForms(), [dialogForms]);
+
   return (
     <Container>
       <Box className={classes.root}>
@@ -147,27 +170,37 @@ function AdminSettings() {
         </div>
         <Box className={classes.searchContainer}>
           <FilterListIcon onClick={handleSearchIcon} />
-          <ActionMenu handleClick={handleClick} handleClose={handleClose} actio anchorEl={anchorEl}>
+          <ActionMenu handleClick={handleClick} handleClose={handleClose} anchorEl={anchorEl}>
             {renderActionMenu}
           </ActionMenu>
         </Box>
       </Box>
       <Tabs activeTab={activeTab} handleTabChange={handleTabChange}>
-        <Tab label={labels?.languages} />
-        <Tab label={labels?.admin_settings} />
-        <Tab label={labels?.translations} />
-        <Tab label={labels?.other_settings} />
+        <Tab label={labels?.languages || "Languages"} />
+        <Tab label={labels?.admin_settings || "Admin Settings"} />
+        <Tab label={labels?.translations || "Translations"} />
+        <Tab label={labels?.other_settings || "Other Settings"} />
       </Tabs>
 
       {renderTabContent}
-      <DynamicModal header={labels.search_title} open={modelOpen} handleClose={handleModelClose}></DynamicModal>
+      <DynamicModal header={labels.search_title} open={modelOpen} handleClose={handleModelClose} />
       <DynamicModal
-        header={"add lang"}
-        open={modalOpenAdd}
-        handleClose={handleAddModalClose}
-        actionLabel={dialogFormProps.actionLabel}
+        header={"Add Language"}
+        open={langModalOpenAdd}
+        handleClose={handleLangAddModalClose}
+        actionLabel={langDialogFormProps.actionLabel}
         maxWidth={"md"}
-        actionHandler={dialogFormProps.actionHandler}
+        actionHandler={langDialogFormProps.actionHandler}
+      >
+        {currentForm}
+      </DynamicModal>
+      <DynamicModal
+        header={"Add Dictionary"}
+        open={dictionaryModalOpenAdd}
+        handleClose={handleDictionaryAddModalClose}
+        actionLabel={dictionaryDialogFormProps.actionLabel}
+        maxWidth={"md"}
+        actionHandler={dictionaryDialogFormProps.actionHandler}
       >
         {currentForm}
       </DynamicModal>
