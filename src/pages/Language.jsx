@@ -48,7 +48,7 @@ const Language = ({ populateLanguageForm, deleteLanguage }) => {
 
   const fetchData = useCallback((start, limit) => {
     axiosPrivate
-      .get(`/api/protected/${currentConfig.languageConfig}`, {
+      .get(`/api/protected/${currentConfig.languages}`, {
         params: {
           start,
           limit

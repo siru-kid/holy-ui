@@ -13,7 +13,6 @@ const langConfigInitial = {
   tenant_id: ""
 };
 const schema = Yup.object().shape({
-  lang_id: Yup.string().required("lang Id is required"),
   lang_name: Yup.string().required("Lang Name is required"),
   tenant_id: Yup.string().required("tenant Id text is required ")
 });
