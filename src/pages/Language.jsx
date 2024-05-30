@@ -14,22 +14,14 @@ const COLUMNS = [
     accessor: "id"
   },
   {
-    Header: "Tenant Name",
-    accessor: "tenant_name"
+    Header: "Tenant Id",
+    accessor: "tenant_id"
   },
   {
     Header: "Lang_Name",
     accessor: "lang_name"
   },
-  {
-    Header: "Updated By",
-    accessor: "updated_by"
-  },
-  {
-    Header: "Created At",
-    accessor: "created_at",
-    type: "date"
-  },
+
   {
     Header: "Updated At",
     accessor: "updated_at",

@@ -9,13 +9,14 @@ const currentConfig = import.meta.env.MODE === "development" ? config.test : con
 
 const COLUMNS = [
   {
-    Header: "Page Type",
-    accessor: "page_type"
+    Header: "ID",
+    accessor: "id"
   },
   {
     Header: "Key",
-    accessor: "key"
+    accessor: "Key"
   },
+  { Header: "Language", accessor: "language" },
 
   {
     Header: "Tenant Name",
@@ -23,27 +24,22 @@ const COLUMNS = [
   },
   {
     Header: "English",
-    accessor: "english"
+    accessor: "English"
   },
   {
     Header: "Tigrinia",
-    accessor: "tigrinia"
+    accessor: "\u1275\u130d\u122d\u129b"
   },
   {
     Header: "Spanish",
-    accessor: "spanish"
+    accessor: "\u0639\u0631\u0628\u064a"
   },
+
   {
     Header: "Updated By",
     accessor: "updated_by"
   },
 
-  {
-    Header: "Updated At",
-    accessor: "updated_at",
-
-    type: "date"
-  },
   {
     Header: "Action",
     accessor: "action"
@@ -56,6 +52,7 @@ const Dictionary = ({ populateDictionaryForm, deleteDictionary }) => {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback((start, limit) => {
+    console.log("Fetching data with params:", { start, limit });
     axiosPrivate
       .get(`/api/protected/${currentConfig.dictionaries}`, {
         params: {
@@ -64,15 +61,18 @@ const Dictionary = ({ populateDictionaryForm, deleteDictionary }) => {
         }
       })
       .then(({ data }) => {
+        console.log("Fetched dictionary data:", data);
         setData(data);
         setLoading(false);
       })
       .catch((err) => {
-        console.error("error :>> ", err);
+        console.error("Error fetching data:", err);
         setLoading(false);
       });
   }, []);
+
   useEffect(() => {
+    console.log("useEffect called, fetching data");
     fetchData(0, 100);
   }, [fetchData]);
 
@@ -111,6 +111,7 @@ const Dictionary = ({ populateDictionaryForm, deleteDictionary }) => {
     </div>
   );
 };
+
 Dictionary.propTypes = {
   deleteDictionary: PropTypes.func,
   populateDictionaryForm: PropTypes.func,
